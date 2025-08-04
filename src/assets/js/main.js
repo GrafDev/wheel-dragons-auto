@@ -173,57 +173,69 @@ document.addEventListener('DOMContentLoaded', async () => {
     ];
 
     try {
-        await preloadImages(images);
+        const initializationPromise = async () => {
+            await preloadImages(images);
 
-        showContent();
+            showContent();
 
-        const i18n = await setupI18n();
+            const i18n = await setupI18n();
 
-        Animations1.fixLogoPositions();
-
-        window.addEventListener('resize', () => {
             Animations1.fixLogoPositions();
-        });
 
-        window.addEventListener('orientationchange', () => {
-            setTimeout(() => {
+            window.addEventListener('resize', () => {
                 Animations1.fixLogoPositions();
-            }, 300);
+            });
+
+            window.addEventListener('orientationchange', () => {
+                setTimeout(() => {
+                    Animations1.fixLogoPositions();
+                }, 300);
+            });
+
+            Animations1.initializePageElements();
+
+            const fireSpriteManager = new FireSpriteManager();
+            fireSpriteManager.initialize();
+            fireSpriteManager.play(2);
+
+            const counterTextElement = document.querySelector('.counter-text');
+            if (counterTextElement) {
+                counterTextElement.textContent = '1';
+                counterTextElement.classList.remove('content-hidden');
+            }
+
+            const dragonsElement = document.querySelector('.logo02.dragons');
+            if (dragonsElement) {
+                dragonsElement.style.animation = 'none';
+                DragonAnimations.startDragonsPulsation(dragonsElement);
+            }
+
+            const spinButton = document.getElementById('spin-button');
+            const languageSelector = document.getElementById('language-selector');
+
+            spinButton?.addEventListener('click', () => game1.spin());
+            languageSelector?.addEventListener('change', (e) => {
+                i18n.changeLanguage(e.target.value);
+                updateTexts();
+            });
+
+            updateTexts();
+        };
+
+        const timeoutPromise = new Promise((resolve) => {
+            setTimeout(resolve, 5000);
         });
 
-        Animations1.initializePageElements();
-
-        const fireSpriteManager = new FireSpriteManager();
-        fireSpriteManager.initialize();
-        fireSpriteManager.play(2);
-
+        await Promise.race([initializationPromise(), timeoutPromise]);
+        
         setTimeout(() => {
             game1.spin();
-        }, 1500);
+        }, 2000);
 
-        const counterTextElement = document.querySelector('.counter-text');
-        if (counterTextElement) {
-            counterTextElement.textContent = '1';
-            counterTextElement.classList.remove('content-hidden');
-        }
-
-        const dragonsElement = document.querySelector('.logo02.dragons');
-        if (dragonsElement) {
-            dragonsElement.style.animation = 'none';
-            DragonAnimations.startDragonsPulsation(dragonsElement);
-        }
-
-        const spinButton = document.getElementById('spin-button');
-        const languageSelector = document.getElementById('language-selector');
-
-        spinButton?.addEventListener('click', () => game1.spin());
-        languageSelector?.addEventListener('change', (e) => {
-            i18n.changeLanguage(e.target.value);
-            updateTexts();
-        });
-
-        updateTexts();
     } catch (error) {
         console.error('Failed to initialize the game:', error);
+        setTimeout(() => {
+            game1.spin();
+        }, 2000);
     }
 });
